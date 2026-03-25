@@ -3,6 +3,7 @@ import { useW } from '../hooks/useW.js';
 import { C, LECTURER_COURSES, MONTHS, DAYS } from '../data/constants.js';
 import { SectionCard, Badge } from '../components/shared/SectionCard.jsx';
 import { AttendanceCalendar } from '../components/AttendanceCalendar.jsx';
+import { QRCodeGenerator } from '../components/QRCodeGenerator.jsx';
 import { seedAttendance, generateStudents, fmtDisplay, today } from '../utils/helpers.js';
 
 export function AttendancePage() {
@@ -15,6 +16,7 @@ export function AttendancePage() {
   const [search,setSearch]           = useState("");
   const [saved,setSaved]             = useState(false);
   const [tab,setTab]                 = useState("mark");
+  const [showPopup,setShowPopup]     = useState(null); // 'success' or 'failed'
 
   const course   = LECTURER_COURSES.find(c=>c.code===selCourse);
   const students = useMemo(()=>generateStudents(selCourse),[selCourse]);
@@ -38,6 +40,22 @@ export function AttendancePage() {
   const handleSave = ()=>{
     setAttendanceData(prev=>({...prev,[selCourse]:{...prev[selCourse],[selDate]:{...(prev[selCourse]?.[selDate]||{}),locked:false,label:sessionLabel}}}));
     setSaved(true); setTimeout(()=>setSaved(false),2500);
+  };
+
+  const handleQRScanSuccess = () => {
+    setShowPopup('success');
+    setTimeout(() => setShowPopup(null), 3000);
+    // Simulate marking a random student as present
+    const unmarkedStudents = students.filter(s => !dayData[s.id] || !["present","absent","excused"].includes(dayData[s.id]));
+    if (unmarkedStudents.length > 0) {
+      const randomStudent = unmarkedStudents[Math.floor(Math.random() * unmarkedStudents.length)];
+      markOne(randomStudent.id, "present");
+    }
+  };
+
+  const handleQRScanFailed = () => {
+    setShowPopup('failed');
+    setTimeout(() => setShowPopup(null), 3000);
   };
 
   const summary = useMemo(()=>{
@@ -148,7 +166,7 @@ export function AttendancePage() {
           {!isFutureDate ? (
             <>
               <div style={{display:"flex",background:"white",border:"1px solid #e0e0e0",borderRadius:"8px 8px 0 0"}}>
-                {[{key:"mark",label:"✅ Mark Attendance"},{key:"report",label:"📈 Full Report"}].map(t=>(
+                {[{key:"mark",label:"✅ Mark Attendance"},{key:"qr",label:"📱 QR Scanner"},{key:"report",label:"📈 Full Report"}].map(t=>(
                   <button key={t.key} onClick={()=>setTab(t.key)} style={{
                     flex:1,background:"none",border:"none",padding:"12px 0",fontSize:isLg?13:12,
                     fontWeight:tab===t.key?700:400,color:tab===t.key?C.blue:"#666",
@@ -227,6 +245,18 @@ export function AttendancePage() {
                     </button>
                     {saved&&<div style={{background:"#eafaf1",border:`1px solid ${C.green}`,borderRadius:6,padding:"8px 12px",fontSize:12,color:C.green,fontWeight:700,whiteSpace:"nowrap"}}>✓ Saved!</div>}
                   </div>
+                </div>
+              )}
+
+              {tab==="qr"&&(
+                <div style={{background:"white",border:"1px solid #e0e0e0",borderTop:"none",borderRadius:"0 0 8px 8px",marginBottom:16}}>
+                  <QRCodeGenerator 
+                    courseCode={selCourse}
+                    date={selDate}
+                    sessionLabel={sessionLabel}
+                    onScanSuccess={handleQRScanSuccess}
+                    onScanFailed={handleQRScanFailed}
+                  />
                 </div>
               )}
 
@@ -310,6 +340,65 @@ export function AttendancePage() {
           )}
         </div>
       </div>
+
+      {/* QR Scan Result Popups */}
+      {showPopup && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 2000,
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          <div style={{
+            background: showPopup === 'success' ? C.green : C.red,
+            color: 'white',
+            padding: '12px 16px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            minWidth: '200px'
+          }}>
+            <div style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}>
+              {showPopup === 'success' ? '✓' : '✗'}
+            </div>
+            <div>
+              <div style={{fontSize: '12px', fontWeight: '600', marginBottom: '1px'}}>
+                {showPopup === 'success' ? 'Scan Successful!' : 'Scan Failed!'}
+              </div>
+              <div style={{fontSize: '10px', opacity: 0.9}}>
+                {showPopup === 'success' ? 'Attendance marked successfully' : 'Please try again'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add CSS animation */}
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }
