@@ -1,17 +1,21 @@
 import { C } from '../data/constants.js';
 
 export function SideNav({ page, setPage, role }) {
+  const aItems = [
+    {label:"Dashboard",icon:"🏠"},{label:"Users",icon:"👥"},{label:"Courses",icon:"📚"},
+    {label:"System",icon:"⚙️"},{label:"Reports",icon:"📊"},{label:"Settings",icon:"🔧"},
+  ];
   const sItems = [
-    {label:"Dashboard",icon:"🏠"},{label:"Home",icon:"⊞"},{label:"Course",icon:"📚"},
+    {label:"Dashboard",icon:"🏠"},{label:"Course",icon:"📚"},
     {label:"Sub",icon:"📋"},{label:"Grade Book",icon:"📊"},{label:"Forum",icon:"💬"},
     {label:"Assignment",icon:"📝"},{label:"Studio",icon:"🎬"},{label:"Extras",icon:"➕"},
   ];
   const lItems = [
-    {label:"Dashboard",icon:"🏠"},{label:"Home",icon:"⊞"},{label:"My Courses",icon:"📚"},
+    {label:"Dashboard",icon:"🏠"},{label:"My Courses",icon:"📚"},
     {label:"Attendance",icon:"✅"},{label:"Grade Book",icon:"📊"},{label:"Assignments",icon:"📝"},
     {label:"Forum",icon:"💬"},{label:"Reports",icon:"📈"},{label:"Extras",icon:"➕"},
   ];
-  const items = role==="lecturer"?lItems:sItems;
+  const items = role==="admin"?aItems:role==="lecturer"?lItems:sItems;
   return (
     <div style={{width:210,background:"white",borderRight:"1px solid #e8e8e8",minHeight:"100%",flexShrink:0,paddingTop:8}}>
       <div style={{padding:"12px 16px 8px",fontSize:10,color:"#bbb",fontWeight:700,letterSpacing:1}}>NAVIGATION</div>
