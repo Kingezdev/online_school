@@ -14,6 +14,23 @@ import { AdminDashboard } from './pages/AdminDashboard.jsx';
 import { HomePage as MainHomePage } from './pages/HomePage.jsx';
 import { MyCoursesPage } from './pages/MyCoursesPage.jsx';
 import { AttendancePage } from './pages/AttendancePage.jsx';
+import { StudentCoursesPage } from './pages/StudentCoursesPage.jsx';
+import { StudentSubmissionsPage } from './pages/StudentSubmissionsPage.jsx';
+import { StudentGradeBookPage } from './pages/StudentGradeBookPage.jsx';
+import { StudentForumPage } from './pages/StudentForumPage.jsx';
+import { StudentAssignmentsPage } from './pages/StudentAssignmentsPage.jsx';
+import { StudentStudioPage } from './pages/StudentStudioPage.jsx';
+import { StudentExtrasPage } from './pages/StudentExtrasPage.jsx';
+import { LecturerGradeBookPage } from './pages/LecturerGradeBookPage.jsx';
+import { LecturerAssignmentsPage } from './pages/LecturerAssignmentsPage.jsx';
+import { LecturerForumPage } from './pages/LecturerForumPage.jsx';
+import { LecturerReportsPage } from './pages/LecturerReportsPage.jsx';
+import { LecturerExtrasPage } from './pages/LecturerExtrasPage.jsx';
+import { AdminUsersPage } from './pages/AdminUsersPage.jsx';
+import { AdminCoursesPage } from './pages/AdminCoursesPage.jsx';
+import { AdminSystemPage } from './pages/AdminSystemPage.jsx';
+import { AdminReportsPage } from './pages/AdminReportsPage.jsx';
+import { AdminSettingsPage } from './pages/AdminSettingsPage.jsx';
 import { C } from './data/constants.js';
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
@@ -61,10 +78,40 @@ export default function App() {
   }
 
   const renderPage = () => {
-    if (page==="dashboard") return role==="lecturer"?<LecturerDashboard setPage={setPage}/>:role==="admin"?<AdminDashboard setPage={setPage}/>:<StudentDashboard/>;
+    if (page==="dashboard") return role==="lecturer"?<LecturerDashboard setPage={setPage}/>:role==="admin"?<AdminDashboard setPage={setPage}/>:<StudentDashboard setPage={setPage}/>;
     if (page==="home")       return <HomePage setPage={setPage} role={role}/>;
     if (page==="my courses") return <MyCoursesPage role={role}/>;
-    if (page==="attendance") return <AttendancePage/>;
+    if (page==="attendance") return <AttendancePage role={role}/>;
+    
+    // Student pages
+    if (role==="student") {
+      if (page==="course") return <StudentCoursesPage setPage={setPage}/>;
+      if (page==="sub") return <StudentSubmissionsPage setPage={setPage}/>;
+      if (page==="grade book") return <StudentGradeBookPage setPage={setPage}/>;
+      if (page==="forum") return <StudentForumPage setPage={setPage}/>;
+      if (page==="assignment") return <StudentAssignmentsPage setPage={setPage}/>;
+      if (page==="studio") return <StudentStudioPage setPage={setPage}/>;
+      if (page==="extras") return <StudentExtrasPage setPage={setPage}/>;
+    }
+    
+    // Lecturer pages
+    if (role==="lecturer") {
+      if (page==="grade book") return <LecturerGradeBookPage setPage={setPage}/>;
+      if (page==="assignments") return <LecturerAssignmentsPage setPage={setPage}/>;
+      if (page==="forum") return <LecturerForumPage setPage={setPage}/>;
+      if (page==="reports") return <LecturerReportsPage setPage={setPage}/>;
+      if (page==="extras") return <LecturerExtrasPage setPage={setPage}/>;
+    }
+    
+    // Admin pages
+    if (role==="admin") {
+      if (page==="users") return <AdminUsersPage setPage={setPage}/>;
+      if (page==="courses") return <AdminCoursesPage setPage={setPage}/>;
+      if (page==="system") return <AdminSystemPage setPage={setPage}/>;
+      if (page==="reports") return <AdminReportsPage setPage={setPage}/>;
+      if (page==="settings") return <AdminSettingsPage setPage={setPage}/>;
+    }
+    
     return (
       <div style={{padding:isLg?48:32,textAlign:"center",color:"#888"}}>
         <div style={{fontSize:48,marginBottom:14}}>🚧</div>
