@@ -78,6 +78,7 @@ export default function App() {
   }
 
   const renderPage = () => {
+    console.log("Current page:", page, "Role:", role);
     if (page==="dashboard") return role==="lecturer"?<LecturerDashboard setPage={setPage}/>:role==="admin"?<AdminDashboard setPage={setPage}/>:<StudentDashboard setPage={setPage}/>;
     if (page==="home")       return <HomePage setPage={setPage} role={role}/>;
     if (page==="my courses") return <MyCoursesPage role={role}/>;
@@ -122,27 +123,21 @@ export default function App() {
   };
 
   return (
-    <div style={{minHeight:"100vh",background:"#f5f7fa",fontFamily:"Arial,sans-serif",display:"flex",flexDirection:"column"}}>
-      <TopBar role={role} setRole={switchRole}/>
+    <div style={{minHeight: "100vh", background: "#f5f7fa", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column"}}>
+      <TopBar role={role} setRole={switchRole} setPage={setPage} currentPage={page}/>
 
-      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
-        {/* Sidebar — desktop only */}
-        {isLg&&<SideNav page={page} setPage={setPage} role={role}/>}
-
+      <div style={{display: "flex", flex: 1, overflow: "hidden"}}>
         {/* Main area */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          {/* Tab nav — tablet */}
-          {isMd&&<TabNav page={page} setPage={setPage} role={role}/>}
-
+        <div style={{flex: 1, display: "flex", flexDirection: "column", overflow: "hidden"}}>
           {/* Scrollable content */}
-          <div style={{flex:1,overflowY:"auto",paddingBottom:isSm?70:0}}>
+          <div style={{flex: 1, overflowY: "auto", paddingBottom: isSm ? "70px" : "0"}}>
             {renderPage()}
           </div>
         </div>
       </div>
 
       {/* Bottom nav — mobile only */}
-      {isSm&&<BottomNav page={page} setPage={setPage} role={role}/>}
+      {isSm && <BottomNav page={page} setPage={setPage} role={role}/>}
     </div>
   );
 }

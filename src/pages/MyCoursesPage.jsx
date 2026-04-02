@@ -1,39 +1,103 @@
 import { useW } from '../hooks/useW.js';
 import { C, COURSES, LECTURER_COURSES } from '../data/constants.js';
-import { SectionCard, Badge, StatPill } from '../components/shared/SectionCard.jsx';
 
 export function MyCoursesPage({ role }) {
-  const w=useW(); const isLg=w>=1024;
-  const courses=role==="lecturer"?LECTURER_COURSES:COURSES;
-  const cols=isLg?3:w>=640?2:2;
+  const w = useW(); 
+  const isLg = w >= 1024;
+  const courses = role === "lecturer" ? LECTURER_COURSES : COURSES;
+
   return (
-    <div style={{padding:isLg?"24px 32px":16}}>
-      <h2 style={{margin:"0 0 4px",fontSize:isLg?20:15,color:"#333",fontWeight:700}}>My Courses</h2>
-      <div style={{fontSize:12,color:"#aaa",marginBottom:16}}>Home / My Courses</div>
-      <div style={{background:"white",border:"1px solid #e0e0e0",borderRadius:8,padding:isLg?"16px 20px":"12px 16px",marginBottom:16,display:"flex",gap:isLg?40:24}}>
-        <StatPill icon="📋" value={courses.length} label="Courses"     color={C.orange}/>
-        <StatPill icon="👥" value={courses.length} label="Groupings"   color={C.red}/>
-        <StatPill icon="👤" value={2}              label="Tutor Groups" color="#95a5a6"/>
+    <div style={{padding: isLg ? "32px" : "16px", backgroundColor: "#f5f5f5", minHeight: "100vh"}}>
+      <div style={{marginBottom: "24px"}}>
+        <h1 style={{fontSize: "24px", fontWeight: "bold", color: "#111827", margin: "0 0 8px"}}>My Courses</h1>
+        <div style={{fontSize: "14px", color: "#6b7280", marginTop: "8px"}}>Home / My Courses</div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:`repeat(${cols},1fr)`,gap:isLg?16:8}}>
-        {courses.map((course,i)=>(
-          <div key={i} style={{background:"white",border:"1px solid #e0e0e0",borderRadius:8,padding:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-              <div style={{flex:1,marginRight:8}}>
-                <div style={{fontSize:isLg?13:11,fontWeight:700,color:C.blue,marginBottom:4,lineHeight:1.3}}>{course.name}</div>
-                <Badge color={C.blue}>{course.code}</Badge>
+
+      {/* Course Statistics Cards */}
+      <div style={{backgroundColor: "white", borderRadius: "8px", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", border: "1px solid #e5e7eb", padding: "24px", marginBottom: "24px"}}>
+        <div style={{display: "flex", gap: "24px", justifyContent: "space-between"}}>
+          <div style={{display: "flex", alignItems: "center", gap: "16px", flex: "1"}}>
+            <div style={{width: "48px", height: "48px", backgroundColor: "#fed7aa", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center"}}>
+              <span style={{fontSize: "24px"}}>📋</span>
+            </div>
+            <div>
+              <div style={{fontSize: "24px", fontWeight: "bold", color: "#ea580c"}}>{courses.length}</div>
+              <div style={{fontSize: "14px", color: "#6b7280"}}>Courses</div>
+            </div>
+          </div>
+          <div style={{display: "flex", alignItems: "center", gap: "16px", flex: "1"}}>
+            <div style={{width: "48px", height: "48px", backgroundColor: "#fecaca", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center"}}>
+              <span style={{fontSize: "24px"}}>👥</span>
+            </div>
+            <div>
+              <div style={{fontSize: "24px", fontWeight: "bold", color: "#dc2626"}}>{courses.length}</div>
+              <div style={{fontSize: "14px", color: "#6b7280"}}>Course Grouping</div>
+            </div>
+          </div>
+          <div style={{display: "flex", alignItems: "center", gap: "16px", flex: "1"}}>
+            <div style={{width: "48px", height: "48px", backgroundColor: "#f3f4f6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center"}}>
+              <span style={{fontSize: "24px"}}>👥</span>
+            </div>
+            <div>
+              <div style={{fontSize: "24px", fontWeight: "bold", color: "#6b7280"}}>0</div>
+              <div style={{fontSize: "14px", color: "#6b7280"}}>Tutor Grouping</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Course List */}
+      <div style={{backgroundColor: "white", borderRadius: "8px", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", border: "1px solid #e5e7eb", padding: "24px"}}>
+        <h2 style={{fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "16px"}}>Course List</h2>
+        {courses.map((course, index) => (
+          <div key={index} style={{borderBottom: index !== courses.length - 1 ? "1px solid #e5e7eb" : "none", paddingBottom: index !== courses.length - 1 ? "16px" : "0", marginBottom: index !== courses.length - 1 ? "16px" : "0"}}>
+            <div style={{display: "flex", alignItems: "flex-start", justifyContent: "space-between"}}>
+              <div style={{flex: "1"}}>
+                <h3 style={{fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "8px", margin: "0 0 8px"}}>
+                  {course.name} - {course.code}
+                </h3>
+                <div style={{display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#6b7280"}}>
+                  <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                    <span style={{fontWeight: "medium"}}>Groupings:</span>
+                    <span style={{padding: "2px 8px", backgroundColor: "#dbeafe", color: "#1e40af", borderRadius: "4px", fontSize: "12px"}}>
+                      GROUP {course.tutor}
+                    </span>
+                  </div>
+                  <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                    <span style={{fontWeight: "medium"}}>Tutor:</span>
+                    <span>GROUP {course.tutor}</span>
+                  </div>
+                  <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                    <span style={{fontWeight: "medium"}}>Sub Group:</span>
+                    <span style={{color: "#9ca3af"}}>
+                      {course.code === "COSC 211" ? "No grouping yet" : "No grouping yet"}
+                    </span>
+                  </div>
+                </div>
+                <div style={{display: "flex", alignItems: "center", gap: "16px", marginTop: "16px"}}>
+                  <button style={{padding: "8px 16px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "8px", transition: "background-color 0.2s", fontSize: "14px", fontWeight: "medium", border: "none", cursor: "pointer"}} 
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e5e7eb"}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"}>
+                    Assignment | {course.assignments}
+                  </button>
+                  <button style={{padding: "8px 16px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "8px", transition: "background-color 0.2s", fontSize: "14px", fontWeight: "medium", border: "none", cursor: "pointer"}} 
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e5e7eb"}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"}>
+                    Quizzes | {course.quizzes}
+                  </button>
+                  <button style={{padding: "8px 16px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "8px", transition: "background-color 0.2s", fontSize: "14px", fontWeight: "medium", border: "none", cursor: "pointer"}} 
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e5e7eb"}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"}>
+                    Gradable Forum | 0
+                  </button>
+                  <button style={{padding: "8px 16px", backgroundColor: "#2563eb", color: "white", borderRadius: "8px", transition: "background-color 0.2s", fontSize: "14px", fontWeight: "medium", border: "none", cursor: "pointer"}} 
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1d4ed8"}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#2563eb"}>
+                    Go to Class
+                  </button>
+                </div>
               </div>
-              <div style={{width:38,height:38,borderRadius:"50%",background:`hsl(${i*40},60%,55%)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📚</div>
             </div>
-            <div style={{fontSize:11,color:"#666",marginBottom:10}}>
-              <div><strong>Tutor:</strong> {course.tutor} · 👤 {course.students}</div>
-              <div style={{color:"#aaa",marginTop:2}}><strong>Sub Group:</strong> {course.code==="COSC 211"?"Group 5 | 10":"No grouping yet"}</div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:4}}>
-              <div style={{background:"#f5f5f5",borderRadius:4,padding:"4px 6px",fontSize:10,color:"#555",textAlign:"center"}}>📝 {course.assignments} Tasks</div>
-              <div style={{background:"#f5f5f5",borderRadius:4,padding:"4px 6px",fontSize:10,color:"#555",textAlign:"center"}}>✅ {course.quizzes} Quizzes</div>
-            </div>
-            <button style={{width:"100%",background:C.blue,color:"white",border:"none",borderRadius:5,padding:"7px 0",fontSize:11,cursor:"pointer",fontWeight:600}}>🏛 Go to Class</button>
           </div>
         ))}
       </div>
