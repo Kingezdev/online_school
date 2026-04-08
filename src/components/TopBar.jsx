@@ -189,21 +189,106 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
           <div style={{position: "relative"}}>
             <button 
               onClick={() => setShowProfile(!showProfile)}
-              style={{display: "flex", alignItems: "center", gap: "8px", transition: "background-color 0.2s", backgroundColor: "transparent", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", border: "none"}}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#0d3d2a"}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+              style={{color: "white", transition: "color 0.2s", background: "none", border: "none", cursor: "pointer", padding: "8px", display: "flex", alignItems: "center", gap: "8px"}}
             >
-              <div style={{width: "32px", height: "32px", backgroundColor: "#2563eb", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold", color: "white"}}>
-                MR
-              </div>
-              <div style={{display: isLg ? "block" : "none", textAlign: "left"}}>
-                <div style={{fontSize: "12px", fontWeight: "bold"}}>MADO ROGERS</div>
-                <div style={{fontSize: "12px", opacity: 0.75}}>student</div>
-              </div>
+              <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span style={{fontSize: "12px"}}>John Doe</span>
               <svg style={{width: "16px", height: "16px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
+            
+            {/* Profile Dropdown Menu */}
+            {showProfile && (
+              <div style={{position: "absolute", top: "100%", right: 0, backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)", zIndex: 50, minWidth: "200px", marginTop: "8px"}}>
+                {/* User Info Header */}
+                <div style={{padding: "16px", borderBottom: "1px solid #e5e7eb"}}>
+                  <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                    <div style={{width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "16px", fontWeight: "bold"}}>
+                      JD
+                    </div>
+                    <div>
+                      <div style={{fontSize: "14px", fontWeight: "600", color: "#111827", marginBottom: "2px"}}>
+                        John Doe
+                      </div>
+                      <div style={{fontSize: "12px", color: "#6b7280"}}>
+                        Student • Computer Science
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Menu Items */}
+                <div style={{padding: "8px 0"}}>
+                  <button 
+                    onClick={() => {
+                      if (role === "student") {
+                        setPage("my profile");
+                      } else {
+                        setPage("staff profile");
+                      }
+                      setShowProfile(false);
+                    }}
+                    style={{width: "100%", padding: "10px 16px", fontSize: "13px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "12px"}} 
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"} 
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                  >
+                    <svg style={{width: "16px", height: "16px", color: "#6b7280"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    My Profile
+                  </button>
+                  
+                                    
+                  <button 
+                    onClick={() => {
+                      setPage("help support");
+                      setShowProfile(false);
+                    }}
+                    style={{width: "100%", padding: "10px 16px", fontSize: "13px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "12px"}} 
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"} 
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                  >
+                    <svg style={{width: "16px", height: "16px", color: "#6b7280"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Help & Support
+                  </button>
+                  
+                  <div style={{height: "1px", backgroundColor: "#e5e7eb", margin: "8px 16px"}}></div>
+                  
+                  <button 
+                    onClick={() => {
+                      // Handle logout
+                      console.log("Logging out...");
+                      setRole(); // This will trigger logout and return to homepage
+                    }}
+                    style={{
+                      width: "100%", 
+                      padding: "10px 16px", 
+                      fontSize: "13px", 
+                      color: "#dc2626", 
+                      background: "none", 
+                      border: "none", 
+                      cursor: "pointer", 
+                      textAlign: "left", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "12px"
+                    }} 
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#fef2f2"} 
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                  >
+                    <svg style={{width: "16px", height: "16px", color: "#dc2626"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3V4z" />
+                    </svg>
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

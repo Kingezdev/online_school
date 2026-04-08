@@ -31,6 +31,9 @@ import { AdminCoursesPage } from './pages/AdminCoursesPage.jsx';
 import { AdminSystemPage } from './pages/AdminSystemPage.jsx';
 import { AdminReportsPage } from './pages/AdminReportsPage.jsx';
 import { AdminSettingsPage } from './pages/AdminSettingsPage.jsx';
+import { MyProfilePage } from './pages/MyProfilePage.jsx';
+import { HelpSupportPage } from './pages/HelpSupportPage.jsx';
+import { StaffProfilePage } from './pages/StaffProfilePage.jsx';
 import { C } from './data/constants.js';
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
@@ -93,6 +96,8 @@ export default function App() {
       if (page==="assignment") return <StudentAssignmentsPage setPage={setPage}/>;
       if (page==="studio") return <StudentStudioPage setPage={setPage}/>;
       if (page==="extras") return <StudentExtrasPage setPage={setPage}/>;
+      if (page==="my profile") return <MyProfilePage setPage={setPage}/>;
+      if (page==="help support") return <HelpSupportPage setPage={setPage}/>;
     }
     
     // Lecturer pages
@@ -102,6 +107,8 @@ export default function App() {
       if (page==="forum") return <LecturerForumPage setPage={setPage}/>;
       if (page==="reports") return <LecturerReportsPage setPage={setPage}/>;
       if (page==="extras") return <LecturerExtrasPage setPage={setPage}/>;
+      if (page==="help support") return <HelpSupportPage setPage={setPage}/>;
+      if (page==="staff profile") return <StaffProfilePage setPage={setPage} role={role}/>;
     }
     
     // Admin pages
@@ -111,6 +118,8 @@ export default function App() {
       if (page==="system") return <AdminSystemPage setPage={setPage}/>;
       if (page==="reports") return <AdminReportsPage setPage={setPage}/>;
       if (page==="settings") return <AdminSettingsPage setPage={setPage}/>;
+      if (page==="staff profile") return <StaffProfilePage setPage={setPage} role={role}/>;
+      if (page==="help support") return <HelpSupportPage setPage={setPage}/>;
     }
     
     return (
