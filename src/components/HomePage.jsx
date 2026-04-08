@@ -5,6 +5,7 @@ import { C } from '../data/constants.js';
 export function HomePage({ onRoleSelect }) {
   const w = useW();
   const isLg = w >= 1024;
+  const [selectedRole, setSelectedRole] = useState('student');
   
   const roles = [
     {
@@ -32,6 +33,8 @@ export function HomePage({ onRoleSelect }) {
       features: ['User Management', 'System Settings', 'Reports & Analytics', 'Data Management']
     }
   ];
+
+  const currentRole = roles.find(r => r.id === selectedRole);
 
   return (
     <div style={{
@@ -103,7 +106,7 @@ export function HomePage({ onRoleSelect }) {
         </div>
       </div>
 
-      {/* Role selection cards */}
+      {/* Role selection area */}
       <div style={{
         position: "absolute",
         bottom: isLg ? 60 : 40,
@@ -113,114 +116,124 @@ export function HomePage({ onRoleSelect }) {
         padding: isLg ? "0 40px" : "0 20px"
       }}>
         <div style={{
-          display: "grid",
-          gridTemplateColumns: isLg ? "repeat(3, 1fr)" : "1fr",
-          gap: isLg ? 24 : 16,
-          maxWidth: 1200,
-          margin: "0 auto"
+          background: "white",
+          borderRadius: 16,
+          padding: isLg ? 40 : 24,
+          maxWidth: 500,
+          margin: "0 auto",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
         }}>
-          {roles.map((role) => (
-            <div
-              key={role.id}
-              onClick={() => onRoleSelect(role.id)}
-              style={{
-                background: "white",
-                borderRadius: 16,
-                padding: isLg ? 32 : 24,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-                border: `2px solid transparent`,
-                textAlign: "center"
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = "translateY(-8px)";
-                e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3)";
-                e.currentTarget.style.borderColor = role.color;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)";
-                e.currentTarget.style.borderColor = "transparent";
-              }}
-            >
+          {/* Tab buttons */}
+          <div style={{
+            display: "flex",
+            marginBottom: 32,
+            borderBottom: "1px solid #e5e7eb"
+          }}>
+            {roles.map((role) => (
+              <button
+                key={role.id}
+                onClick={() => setSelectedRole(role.id)}
+                style={{
+                  flex: 1,
+                  padding: "16px 8px",
+                  background: "none",
+                  border: "none",
+                  borderBottom: selectedRole === role.id ? `3px solid ${role.color}` : "3px solid transparent",
+                  color: selectedRole === role.id ? role.color : "#6b7280",
+                  fontSize: isLg ? 14 : 12,
+                  fontWeight: selectedRole === role.id ? 600 : 400,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {role.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Current role content */}
+          {currentRole && (
+            <div style={{textAlign: "center"}}>
               <div style={{
-                width: isLg ? 80 : 60,
-                height: isLg ? 80 : 60,
+                width: isLg ? 100 : 80,
+                height: isLg ? 100 : 80,
                 borderRadius: "50%",
-                background: role.color,
+                background: currentRole.color,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: isLg ? 32 : 24,
-                margin: "0 auto 16px"
+                fontSize: isLg ? 40 : 32,
+                margin: "0 auto 24px"
               }}>
-                {role.icon}
+                {currentRole.icon}
               </div>
               
               <h3 style={{
                 fontSize: isLg ? 24 : 20,
                 fontWeight: 700,
                 color: "#333",
-                marginBottom: 8
+                marginBottom: 12
               }}>
-                {role.title}
+                {currentRole.title}
               </h3>
               
               <p style={{
                 fontSize: isLg ? 14 : 12,
                 color: "#666",
                 lineHeight: 1.5,
-                marginBottom: 20
+                marginBottom: 24
               }}>
-                {role.description}
+                {currentRole.description}
               </p>
               
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: 8,
-                textAlign: "left"
+                gap: 12,
+                textAlign: "left",
+                marginBottom: 32
               }}>
-                {role.features.map((feature, index) => (
+                {currentRole.features.map((feature, index) => (
                   <div key={index} style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
-                    fontSize: isLg ? 12 : 11,
-                    color: "#888"
+                    gap: 12,
+                    fontSize: isLg ? 13 : 12,
+                    color: "#666"
                   }}>
                     <div style={{
-                      width: 4,
-                      height: 4,
+                      width: 6,
+                      height: 6,
                       borderRadius: "50%",
-                      background: role.color
+                      background: currentRole.color,
+                      flexShrink: 0
                     }}/>
                     {feature}
                   </div>
                 ))}
               </div>
               
-              <button style={{
-                background: role.color,
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                padding: isLg ? "12px 24px" : "10px 20px",
-                fontSize: isLg ? 14 : 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                marginTop: 20,
-                width: "100%",
-                transition: "background 0.2s"
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = role.color + "dd"}
-              onMouseLeave={e => e.currentTarget.style.background = role.color}
+              <button 
+                onClick={() => onRoleSelect(currentRole.id)}
+                style={{
+                  background: currentRole.color,
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: isLg ? "14px 32px" : "12px 24px",
+                  fontSize: isLg ? 15 : 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  width: "100%",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
               >
-                Continue as {role.title}
+                Continue as {currentRole.title}
               </button>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
