@@ -5,8 +5,8 @@ export function BottomNav({ page, setPage, role }) {
     {label:"Dashboard",icon:"🏠"},{label:"Users",icon:"👥"},{label:"System",icon:"⚙️"},{label:"Reports",icon:"📊"},
   ];
   const sItems = [
-    {label:"Dashboard",icon:"🏠"},{label:"Course",icon:"📚"},
-    {label:"Forum",icon:"💬"},{label:"Assignment",icon:"📝"},
+    {label:"Dashboard",icon:""},{label:"Course",icon:""},
+    {label:"Forum",icon:""},{label:"Assignment",icon:""},
   ];
   const lItems = [
     {label:"Dashboard",icon:"🏠"},{label:"My Courses",icon:"📚"},

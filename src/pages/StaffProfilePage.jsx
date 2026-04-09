@@ -1,58 +1,109 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
+import { authAPI } from '../utils/api.js';
 
 export function StaffProfilePage({ setPage, role }) {
   const w = useW();
   const isLg = w >= 1024;
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
   
-  // Different default data based on role
-  const getDefaultData = () => {
-    if (role === "lecturer") {
-      return {
-        firstName: 'Dr. Sarah',
-        lastName: 'Johnson',
-        email: 'sarah.johnson@abu.edu.ng',
-        phone: '+234 567 8901',
-        department: 'Computer Science',
-        employeeId: 'EMP/2020/CS/001',
-        officeLocation: 'Faculty of Technology, Room 205',
-        specialization: 'Software Engineering',
-        qualifications: 'PhD in Computer Science',
-        researchInterests: 'Machine Learning, Web Technologies, Software Architecture',
-        address: 'Ahmadu Bello University, Zaria, Nigeria'
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    department: '',
+    employeeId: '',
+    officeLocation: '',
+    specialization: '',
+    qualifications: '',
+    researchInterests: '',
+    address: ''
+  });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await authAPI.getProfile();
+        if (response.success) {
+          setUser(response.user);
+          setFormData({
+            firstName: response.user.profile?.firstName || '',
+            lastName: response.user.profile?.lastName || '',
+            email: response.user.email || '',
+            phone: response.user.profile?.phone || '',
+            department: response.user.profile?.department || '',
+            employeeId: response.user.profile?.employeeId || '',
+            officeLocation: response.user.profile?.officeLocation || '',
+            specialization: response.user.profile?.specialization || '',
+            qualifications: response.user.profile?.qualifications || '',
+            researchInterests: response.user.profile?.researchInterests || '',
+            address: response.user.profile?.address || ''
+          });
+        }
+      } catch (error) {
+        setError(error.message || "Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const profileData = {
+        profile: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          department: formData.department,
+          employeeId: formData.employeeId,
+          officeLocation: formData.officeLocation,
+          specialization: formData.specialization,
+          qualifications: formData.qualifications,
+          researchInterests: formData.researchInterests,
+          address: formData.address
+        }
       };
-    } else if (role === "admin") {
-      return {
-        firstName: 'Ahmed',
-        lastName: 'Mohammed',
-        email: 'ahmed.mohammed@abu.edu.ng',
-        phone: '+234 567 8902',
-        department: 'ICT Directorate',
-        employeeId: 'ADM/2019/ICT/015',
-        officeLocation: 'Admin Block, Room 102',
-        specialization: 'System Administration',
-        qualifications: 'MSc in Information Technology',
-        researchInterests: 'Network Security, Database Management, System Integration',
-        address: 'Ahmadu Bello University, Zaria, Nigeria'
-      };
+      
+      const response = await authAPI.updateProfile(profileData);
+      if (response.success) {
+        setUser(response.user);
+        setIsEditing(false);
+        setError("");
+      }
+    } catch (error) {
+      setError(error.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const [formData, setFormData] = useState(getDefaultData());
-
-  const handleSave = () => {
-    console.log('Saving staff profile data:', formData);
-    setIsEditing(false);
-    // Add save logic here
-  };
-
   const handleCancel = () => {
-    console.log('Canceling edit');
+    if (user) {
+      setFormData({
+        firstName: user.profile?.firstName || '',
+        lastName: user.profile?.lastName || '',
+        email: user.email || '',
+        phone: user.profile?.phone || '',
+        department: user.profile?.department || '',
+        employeeId: user.profile?.employeeId || '',
+        officeLocation: user.profile?.officeLocation || '',
+        specialization: user.profile?.specialization || '',
+        qualifications: user.profile?.qualifications || '',
+        researchInterests: user.profile?.researchInterests || '',
+        address: user.profile?.address || ''
+      });
+    }
     setIsEditing(false);
-    // Reset form data to original values
-    setFormData(getDefaultData());
+    setError("");
   };
 
   const handleInputChange = (field, value) => {
@@ -74,6 +125,26 @@ export function StaffProfilePage({ setPage, role }) {
         {getRoleTitle()} Profile
       </h1>
       
+      {error && (
+        <div style={{
+          backgroundColor: "#fee",
+          color: "#c53030",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          marginBottom: "24px",
+          fontSize: "14px",
+          border: "1px solid #fed7d7"
+        }}>
+          {error}
+        </div>
+      )}
+      
+      {loading ? (
+        <div style={{textAlign: "center", padding: "60px 20px"}}>
+          <div style={{fontSize: "16px", color: "#6b7280"}}>Loading profile data...</div>
+        </div>
+      ) : (
+        <>
       {/* Profile Overview Card */}
       <div style={{marginBottom: "24px"}}>
         <div style={{backgroundColor: "#2563eb", color: "white", padding: "12px 16px", borderTopLeftRadius: "8px", borderTopRightRadius: "8px"}}>
@@ -84,24 +155,63 @@ export function StaffProfilePage({ setPage, role }) {
             {/* Avatar Section */}
             <div style={{textAlign: "center"}}>
               <div style={{width: "120px", height: "120px", borderRadius: "50%", backgroundColor: role === "lecturer" ? "#059669" : "#dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "48px", fontWeight: "bold", color: "white", marginBottom: "16px"}}>
-                {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                {user ? `${user.profile?.firstName?.charAt(0) || ''}${user.profile?.lastName?.charAt(0) || ''}`.toUpperCase() : 'U'}
               </div>
-              <button 
-                onClick={() => setIsEditing(!isEditing)}
-                style={{
-                  background: isEditing ? "#6b7280" : C.blue,
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  padding: "8px 16px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "background 0.2s"
-                }}
-              >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
-              </button>
+              <div style={{display: "flex", gap: "8px", flexDirection: "column"}}>
+                <button 
+                  onClick={() => setIsEditing(!isEditing)}
+                  style={{
+                    background: isEditing ? "#6b7280" : C.blue,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "background 0.2s"
+                  }}
+                >
+                  {isEditing ? 'Cancel' : 'Edit Profile'}
+                </button>
+                {isEditing && (
+                  <div style={{display: "flex", gap: "8px"}}>
+                    <button 
+                      onClick={handleSave}
+                      disabled={loading}
+                      style={{
+                        background: loading ? "#ccc" : "#10b981",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "8px 16px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      {loading ? 'Saving...' : 'Save'}
+                    </button>
+                    <button 
+                      onClick={handleCancel}
+                      style={{
+                        background: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "8px 16px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      Discard
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Basic Information */}
@@ -296,6 +406,8 @@ export function StaffProfilePage({ setPage, role }) {
             Save Changes
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );

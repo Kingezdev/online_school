@@ -131,7 +131,7 @@ export function QRCodeGenerator({ courseCode, date, sessionLabel, onScanSuccess,
     
     // Simulate scanning process
     setTimeout(() => {
-      const success = Math.random() > 0.3; // 70% success rate
+      const success = Math.random() > 0.1; // 90% success rate
       setIsScanning(false);
       setScanResult(success);
       

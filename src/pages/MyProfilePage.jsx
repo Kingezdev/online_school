@@ -1,42 +1,96 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
+import { authAPI } from '../utils/api.js';
 
 export function MyProfilePage({ setPage }) {
   const w = useW();
   const isLg = w >= 1024;
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@abu.edu.ng',
-    phone: '+234 567 8900',
-    department: 'Computer Science',
-    level: '400',
-    studentId: '2020/123456',
-    address: 'Ahmadu Bello University, Zaria, Nigeria'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    department: '',
+    level: '',
+    studentId: '',
+    address: ''
   });
 
-  const handleSave = () => {
-    console.log('Saving profile data:', formData);
-    setIsEditing(false);
-    // Add save logic here
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await authAPI.getProfile();
+        if (response.success) {
+          setUser(response.user);
+          setFormData({
+            firstName: response.user.profile?.firstName || '',
+            lastName: response.user.profile?.lastName || '',
+            email: response.user.email || '',
+            phone: response.user.profile?.phone || '',
+            department: response.user.profile?.department || '',
+            level: response.user.profile?.level || '',
+            studentId: response.user.profile?.studentId || '',
+            address: response.user.profile?.address || ''
+          });
+        }
+      } catch (error) {
+        setError(error.message || "Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const profileData = {
+        profile: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          department: formData.department,
+          level: formData.level,
+          studentId: formData.studentId,
+          address: formData.address
+        }
+      };
+      
+      const response = await authAPI.updateProfile(profileData);
+      if (response.success) {
+        setUser(response.user);
+        setIsEditing(false);
+        setError("");
+      }
+    } catch (error) {
+      setError(error.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log('Canceling edit');
+    if (user) {
+      setFormData({
+        firstName: user.profile?.firstName || '',
+        lastName: user.profile?.lastName || '',
+        email: user.email || '',
+        phone: user.profile?.phone || '',
+        department: user.profile?.department || '',
+        level: user.profile?.level || '',
+        studentId: user.profile?.studentId || '',
+        address: user.profile?.address || ''
+      });
+    }
     setIsEditing(false);
-    // Reset form data to original values
-    setFormData({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@abu.edu.ng',
-      phone: '+234 567 8900',
-      department: 'Computer Science',
-      level: '400',
-      studentId: '2020/123456',
-      address: 'Ahmadu Bello University, Zaria, Nigeria'
-    });
+    setError("");
   };
 
   const handleInputChange = (field, value) => {
@@ -50,6 +104,26 @@ export function MyProfilePage({ setPage }) {
     <div style={{padding: isLg ? "32px" : "16px", backgroundColor: "#f5f5f5", minHeight: "100vh"}}>
       <h1 style={{margin: "0 0 24px", fontSize: isLg ? "24px" : "20px", color: "#333", fontWeight: "bold"}}>My Profile</h1>
       
+      {error && (
+        <div style={{
+          backgroundColor: "#fee",
+          color: "#c53030",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          marginBottom: "24px",
+          fontSize: "14px",
+          border: "1px solid #fed7d7"
+        }}>
+          {error}
+        </div>
+      )}
+      
+      {loading ? (
+        <div style={{textAlign: "center", padding: "60px 20px"}}>
+          <div style={{fontSize: "16px", color: "#6b7280"}}>Loading profile data...</div>
+        </div>
+      ) : (
+        <>
       {/* Profile Overview Card */}
       <div style={{marginBottom: "24px"}}>
         <div style={{backgroundColor: "#2563eb", color: "white", padding: "12px 16px", borderTopLeftRadius: "8px", borderTopRightRadius: "8px"}}>
@@ -60,24 +134,63 @@ export function MyProfilePage({ setPage }) {
             {/* Avatar Section */}
             <div style={{textAlign: "center"}}>
               <div style={{width: "120px", height: "120px", borderRadius: "50%", backgroundColor: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "48px", fontWeight: "bold", color: "white", marginBottom: "16px"}}>
-                JD
+                {user ? `${user.profile?.firstName?.charAt(0) || ''}${user.profile?.lastName?.charAt(0) || ''}`.toUpperCase() : 'U'}
               </div>
-              <button 
-                onClick={() => setIsEditing(!isEditing)}
-                style={{
-                  background: isEditing ? "#6b7280" : C.blue,
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  padding: "8px 16px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "background 0.2s"
-                }}
-              >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
-              </button>
+              <div style={{display: "flex", gap: "8px", flexDirection: "column"}}>
+                <button 
+                  onClick={() => setIsEditing(!isEditing)}
+                  style={{
+                    background: isEditing ? "#6b7280" : C.blue,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "background 0.2s"
+                  }}
+                >
+                  {isEditing ? 'Cancel' : 'Edit Profile'}
+                </button>
+                {isEditing && (
+                  <div style={{display: "flex", gap: "8px"}}>
+                    <button 
+                      onClick={handleSave}
+                      disabled={loading}
+                      style={{
+                        background: loading ? "#ccc" : "#10b981",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "8px 16px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      {loading ? 'Saving...' : 'Save'}
+                    </button>
+                    <button 
+                      onClick={handleCancel}
+                      style={{
+                        background: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "8px 16px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      Discard
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Basic Information */}
@@ -241,6 +354,8 @@ export function MyProfilePage({ setPage }) {
             Save Changes
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );

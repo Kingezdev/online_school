@@ -1,85 +1,53 @@
+import { useState, useEffect } from 'react';
 import { useW } from '../hooks/useW.js';
 import { C, COURSES } from '../data/constants.js';
 import { SectionCard, Badge } from '../components/shared/SectionCard.jsx';
+import { studentExtrasAPI } from '../utils/api.js';
 
 export function StudentExtrasPage({ setPage }) {
   const w = useW();
   const isLg = w >= 1024;
+  const [extraResources, setExtraResources] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [stats, setStats] = useState({
+    resources: 0,
+    announcements: 0,
+    services: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const extraResources = [
-    {
-      id: 1,
-      title: "Career Services",
-      description: "Career guidance, job opportunities, and professional development",
-      icon: "💼",
-      category: "Career",
-      access: "All Students"
-    },
-    {
-      id: 2,
-      title: "Counseling Services",
-      description: "Mental health support and academic counseling",
-      icon: "🧠",
-      category: "Wellness",
-      access: "All Students"
-    },
-    {
-      id: 3,
-      title: "Student Clubs",
-      description: "Join and participate in various student organizations",
-      icon: "🎭",
-      category: "Activities",
-      access: "All Students"
-    },
-    {
-      id: 4,
-      title: "Academic Calendar",
-      description: "Important dates, holidays, and academic schedule",
-      icon: "📅",
-      category: "Academic",
-      access: "All Students"
-    },
-    {
-      id: 5,
-      title: "Campus Map",
-      description: "Interactive map of campus buildings and facilities",
-      icon: "🗺️",
-      category: "Navigation",
-      access: "All Students"
-    },
-    {
-      id: 6,
-      title: "Transportation",
-      description: "Campus shuttle schedules and transportation options",
-      icon: "🚌",
-      category: "Services",
-      access: "All Students"
-    }
-  ];
+  useEffect(() => {
+    fetchStudentExtras();
+  }, []);
 
-  const announcements = [
-    {
-      id: 1,
-      title: "Spring Semester Registration Open",
-      date: "2026-03-25",
-      priority: "high",
-      description: "Registration for spring 2026 courses is now open"
-    },
-    {
-      id: 2,
-      title: "Career Fair Next Week",
-      date: "2026-03-24",
-      priority: "medium",
-      description: "Annual career fair will be held on March 30th"
-    },
-    {
-      id: 3,
-      title: "Library Hours Extended",
-      date: "2026-03-23",
-      priority: "low",
-      description: "Library will remain open until 10 PM during exam period"
+  const fetchStudentExtras = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await studentExtrasAPI.getStudentExtras();
+      
+      console.log('Student Extras API Response:', response);
+      
+      if (response.success) {
+        setExtraResources(response.resources || []);
+        setAnnouncements(response.announcements || []);
+        setStats(response.stats || {
+          resources: 0,
+          announcements: 0,
+          services: 0
+        });
+      } else {
+        console.log('API returned success=false');
+        setError('Failed to fetch student resources');
+      }
+    } catch (error) {
+      console.log('API Error:', error);
+      setError(error.message || 'Failed to fetch student resources');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getPriorityColor = (priority) => {
     switch(priority) {
@@ -90,15 +58,36 @@ export function StudentExtrasPage({ setPage }) {
     }
   };
 
+  const handleAccessResource = (resource) => {
+    if (resource.url) {
+      window.open(resource.url, '_blank');
+    }
+  };
+
   return (
     <div style={{padding:isLg?"24px 32px":16}}>
       <h2 style={{margin:"0 0 16px",fontSize:isLg?20:15,color:"#333",fontWeight:700}}>Student Resources</h2>
       
+      {/* Error Message */}
+      {error && (
+        <div style={{
+          backgroundColor: "#fee",
+          color: "#c53030",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          marginBottom: "16px",
+          fontSize: "14px",
+          border: "1px solid #fed7d7"
+        }}>
+          {error}
+        </div>
+      )}
+
       <div style={{display:"grid",gridTemplateColumns:isLg?"repeat(3,1fr)":w>=640?"repeat(2,1fr)":"1fr",gap:16,marginBottom:16}}>
         {[
-          {label:"Resources",value:"6",icon:"📚",color:C.blue},
-          {label:"Announcements",value:"3",icon:"📢",color:C.orange},
-          {label:"Services",value:"12",icon:"🛠️",color:C.green},
+          {label:"Resources",value:stats.resources.toString(),icon:"📚",color:C.blue},
+          {label:"Announcements",value:stats.announcements.toString(),icon:"📢",color:C.orange},
+          {label:"Services",value:stats.services.toString(),icon:"🛠️",color:C.green},
         ].map((stat, index) => (
           <div key={index} style={{
             background:"white",border:"1px solid #e0e0e0",borderRadius:8,
@@ -114,32 +103,48 @@ export function StudentExtrasPage({ setPage }) {
       <div style={{display:"grid",gridTemplateColumns:isLg?"2fr 1fr":w>=640?"1fr 1fr":"1fr",gap:16}}>
         <SectionCard title="Available Resources" icon="📚" color={C.blue}>
           <div style={{padding:12}}>
-            {extraResources.map((resource, index) => (
-              <div key={index} style={{
-                background:"#f9f9f9",borderRadius:8,padding:12,marginBottom:8,
-                cursor:"pointer",transition:"all 0.2s"
-              }}
-              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-              onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
-                  <div style={{fontSize:24}}>{resource.icon}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:600,color:"#333",marginBottom:2}}>{resource.title}</div>
-                    <div style={{fontSize:11,color:"#666",marginBottom:2}}>{resource.description}</div>
-                    <div style={{display:"flex",gap:8}}>
-                      <Badge color={C.blue} style={{fontSize:9}}>{resource.category}</Badge>
-                      <Badge color={C.green} style={{fontSize:9}}>{resource.access}</Badge>
+            {loading ? (
+              <div style={{textAlign: "center", padding: "40px"}}>
+                <div style={{fontSize: "16px", color: "#6b7280"}}>Loading student resources...</div>
+              </div>
+            ) : extraResources.length === 0 ? (
+              <div style={{textAlign: "center", padding: "40px"}}>
+                <div style={{fontSize: "16px", color: "#6b7280"}}>No student resources found</div>
+                <div style={{fontSize: "14px", color: "#9ca3af", marginTop: "8px"}}>
+                  Check back later for new resources
+                </div>
+              </div>
+            ) : (
+              extraResources.map((resource, index) => (
+                <div key={index} style={{
+                  background:"#f9f9f9",borderRadius:8,padding:12,marginBottom:8,
+                  cursor:"pointer",transition:"all 0.2s"
+                }}
+                onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+                onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+                    <div style={{fontSize:24}}>{resource.icon}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:600,color:"#333",marginBottom:2}}>{resource.title}</div>
+                      <div style={{fontSize:11,color:"#666",marginBottom:2}}>{resource.description}</div>
+                      <div style={{display:"flex",gap:8}}>
+                        <Badge color={C.blue} style={{fontSize:9}}>{resource.category}</Badge>
+                        <Badge color={C.green} style={{fontSize:9}}>{resource.access}</Badge>
+                      </div>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => handleAccessResource(resource)}
+                    style={{
+                      background:C.blue,color:"white",border:"none",borderRadius:4,
+                      padding:"4px 8px",fontSize:9,cursor:"pointer"
+                    }}
+                  >
+                    Access Resource
+                  </button>
                 </div>
-                <button style={{
-                  background:C.blue,color:"white",border:"none",borderRadius:4,
-                  padding:"4px 8px",fontSize:9,cursor:"pointer"
-                }}>
-                  Access Resource
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </SectionCard>
 

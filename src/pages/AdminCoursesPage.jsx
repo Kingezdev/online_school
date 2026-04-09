@@ -1,19 +1,57 @@
+import { useState, useEffect } from 'react';
 import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
 import { SectionCard, Badge } from '../components/shared/SectionCard.jsx';
+import { courseAPI } from '../utils/api.js';
 
 export function AdminCoursesPage({ setPage }) {
   const w = useW();
   const isLg = w >= 1024;
 
-  const courses = [
-    { code: "COSC 203", name: "Discrete Structures", lecturer: "Ahmad Jafar", students: 48, status: "active", sessions: 24, credits: 3 },
-    { code: "STAT 201", name: "Probability and Statistics", lecturer: "Khadija Hassan", students: 55, status: "active", sessions: 30, credits: 4 },
-    { code: "MATH 207", name: "Linear Algebra", lecturer: "Ahmad Jafar", students: 42, status: "inactive", sessions: 18, credits: 3 },
-    { code: "COSC 205", name: "Digital Logic Design", lecturer: "Khadija Hassan", students: 45, status: "active", sessions: 22, credits: 3 },
-    { code: "COSC 211", name: "Object-Oriented Programming", lecturer: "Yusuf Ahmed", students: 48, status: "active", sessions: 26, credits: 4 },
-    { code: "ENGL 101", name: "English Composition", lecturer: "Sarah Johnson", students: 62, status: "active", sessions: 28, credits: 3 },
-  ];
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const response = await courseAPI.getAll();
+        
+        if (response.success) {
+          setCourses(response.courses || []);
+        } else {
+          setError(response.message || 'Failed to fetch courses');
+        }
+      } catch (error) {
+        setError(error.message || 'Failed to fetch courses');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{padding: isLg ? "24px 32px" : 16}}>
+        <div style={{textAlign: "center", padding: "50px"}}>
+          <div style={{fontSize: "18px", color: "#666"}}>Loading courses...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{padding: isLg ? "24px 32px" : 16}}>
+        <div style={{textAlign: "center", padding: "50px"}}>
+          <div style={{fontSize: "18px", color: "#dc2626"}}>Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status) => {
     return status === "active" ? C.green : C.red;
@@ -25,10 +63,10 @@ export function AdminCoursesPage({ setPage }) {
       
       <div style={{display:"grid",gridTemplateColumns:isLg?"repeat(4,1fr)":w>=640?"repeat(2,1fr)":"1fr",gap:16,marginBottom:16}}>
         {[
-          {label:"Total Courses",value:"6",icon:"📚",color:C.blue},
-          {label:"Active",value:"5",icon:"✅",color:C.green},
-          {label:"Total Students",value:"300",icon:"👥",color:C.orange},
-          {label:"Total Credits",value:"20",icon:"🎯",color:C.purple},
+          {label:"Total Courses",value:courses.length,icon:"📚",color:C.blue},
+          {label:"Active",value:courses.filter(c => c.isActive).length,icon:"✅",color:C.green},
+          {label:"Total Students",value:courses.reduce((sum, c) => sum + (c.studentCount || 0), 0),icon:"👥",color:C.orange},
+          {label:"Total Credits",value:courses.reduce((sum, c) => sum + (c.credits || 0), 0),icon:"🎯",color:C.purple},
         ].map((stat, index) => (
           <div key={index} style={{
             background:"white",border:"1px solid #e0e0e0",borderRadius:8,
@@ -80,13 +118,17 @@ export function AdminCoursesPage({ setPage }) {
                   <tr key={index}>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#333",fontWeight:500}}>{course.code}</td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#333"}}>{course.name}</td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#666"}}>{course.lecturer}</td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{course.students}</td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{course.credits}</td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{course.sessions}</td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#666"}}>
+                      {course.lecturerFirstName && course.lecturerLastName ? 
+                        `${course.lecturerFirstName} ${course.lecturerLastName}` : 
+                        course.lecturerUsername || 'N/A'}
+                    </td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{course.studentCount || 0}</td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{course.credits || 0}</td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>-</td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>
-                      <Badge color={getStatusColor(course.status)}>
-                        {course.status}
+                      <Badge color={getStatusColor(course.isActive ? 'active' : 'inactive')}>
+                        {course.isActive ? 'active' : 'inactive'}
                       </Badge>
                     </td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>
@@ -116,10 +158,10 @@ export function AdminCoursesPage({ setPage }) {
           <div style={{padding:12}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               {[
-                {label:"Avg Class Size",value:"50",icon:"👥"},
-                {label:"Avg Credits",value:"3.3",icon:"🎯"},
-                {label:"Full Capacity",value:"2",icon:"📈"},
-                {label:"Low Enrollment",value:"1",icon:"⚠️"},
+                {label:"Avg Class Size",value:courses.length > 0 ? Math.round(courses.reduce((sum, c) => sum + (c.studentCount || 0), 0) / courses.length) : 0,icon:"👥"},
+                {label:"Avg Credits",value:courses.length > 0 ? (courses.reduce((sum, c) => sum + (c.credits || 0), 0) / courses.length).toFixed(1) : 0,icon:"🎯"},
+                {label:"Full Capacity",value:courses.filter(c => (c.studentCount || 0) >= 50).length,icon:"📈"},
+                {label:"Low Enrollment",value:courses.filter(c => (c.studentCount || 0) < 20).length,icon:"⚠️"},
               ].map((stat, index) => (
                 <div key={index} style={{
                   background:"#f9f9f9",borderRadius:6,padding:8,textAlign:"center"

@@ -1,21 +1,57 @@
+import { useState, useEffect } from 'react';
 import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
 import { SectionCard, Badge } from '../components/shared/SectionCard.jsx';
+import { usersAPI } from '../utils/api.js';
 
 export function AdminUsersPage({ setPage }) {
   const w = useW();
   const isLg = w >= 1024;
 
-  const users = [
-    { id: 1, name: "Ahmad Jafar", email: "ahmad.jafar@abu.edu.ng", role: "lecturer", status: "active", lastLogin: "2026-03-25", courses: 4 },
-    { id: 2, name: "Khadija Hassan", email: "khadija.hassan@abu.edu.ng", role: "lecturer", status: "active", lastLogin: "2026-03-24", courses: 3 },
-    { id: 3, name: "Musa Ibrahim", email: "musa.ibrahim@abu.edu.ng", role: "student", status: "active", lastLogin: "2026-03-25", courses: 6 },
-    { id: 4, name: "Fatima Ali", email: "fatima.ali@abu.edu.ng", role: "student", status: "inactive", lastLogin: "2026-03-20", courses: 5 },
-    { id: 5, name: "Omar Hassan", email: "omar.hassan@abu.edu.ng", role: "student", status: "active", lastLogin: "2026-03-25", courses: 4 },
-    { id: 6, name: "Aisha Bello", email: "aisha.bello@abu.edu.ng", role: "student", status: "active", lastLogin: "2026-03-24", courses: 5 },
-    { id: 7, name: "Yusuf Ahmed", email: "yusuf.ahmed@abu.edu.ng", role: "lecturer", status: "active", lastLogin: "2026-03-25", courses: 2 },
-    { id: 8, name: "Khadija Sani", email: "khadija.sani@abu.edu.ng", role: "student", status: "active", lastLogin: "2026-03-23", courses: 4 },
-  ];
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await usersAPI.getUsers();
+        
+        if (response.success) {
+          setUsers(response.users || []);
+        } else {
+          setError(response.message || 'Failed to fetch users');
+        }
+      } catch (error) {
+        setError(error.message || 'Failed to fetch users');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{padding: isLg ? "24px 32px" : 16}}>
+        <div style={{textAlign: "center", padding: "50px"}}>
+          <div style={{fontSize: "18px", color: "#666"}}>Loading users...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{padding: isLg ? "24px 32px" : 16}}>
+        <div style={{textAlign: "center", padding: "50px"}}>
+          <div style={{fontSize: "18px", color: "#dc2626"}}>Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
 
   const getRoleColor = (role) => {
     return role === "lecturer" ? C.blue : C.green;
@@ -31,10 +67,10 @@ export function AdminUsersPage({ setPage }) {
       
       <div style={{display:"grid",gridTemplateColumns:isLg?"repeat(4,1fr)":w>=640?"repeat(2,1fr)":"1fr",gap:16,marginBottom:16}}>
         {[
-          {label:"Total Users",value:"8",icon:"👥",color:C.blue},
-          {label:"Lecturers",value:"3",icon:"👨‍🏫",color:C.green},
-          {label:"Students",value:"5",icon:"👨‍🎓",color:C.orange},
-          {label:"Active",value:"7",icon:"✅",color:C.green},
+          {label:"Total Users",value:users.length,icon:"",color:C.blue},
+          {label:"Lecturers",value:users.filter(u => u.role === 'lecturer').length,icon:"",color:C.green},
+          {label:"Administrators",value:users.filter(u => u.role === 'admin').length,icon:"",color:C.purple},
+          {label:"Active",value:users.filter(u => u.isActive).length,icon:"",color:C.green},
         ].map((stat, index) => (
           <div key={index} style={{
             background:"white",border:"1px solid #e0e0e0",borderRadius:8,
@@ -85,7 +121,9 @@ export function AdminUsersPage({ setPage }) {
                 {users.map((user, index) => (
                   <tr key={index}>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#333"}}>{user.id}</td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#333",fontWeight:500}}>{user.name}</td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#333",fontWeight:500}}>
+                      {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
+                    </td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",color:"#666"}}>{user.email}</td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>
                       <Badge color={getRoleColor(user.role)}>
@@ -93,12 +131,14 @@ export function AdminUsersPage({ setPage }) {
                       </Badge>
                     </td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>
-                      <Badge color={getStatusColor(user.status)}>
-                        {user.status}
+                      <Badge color={getStatusColor(user.isActive ? 'active' : 'inactive')}>
+                        {user.isActive ? 'active' : 'inactive'}
                       </Badge>
                     </td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{user.courses}</td>
-                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>{user.lastLogin}</td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>-</td>
+                    <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>
+                      {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                    </td>
                     <td style={{padding:"8px",borderTop:"1px solid #eee",textAlign:"center"}}>
                       <button style={{
                         background:C.orange,color:"white",border:"none",borderRadius:4,
@@ -110,7 +150,7 @@ export function AdminUsersPage({ setPage }) {
                         background:C.red,color:"white",border:"none",borderRadius:4,
                         padding:"2px 6px",fontSize:9,cursor:"pointer"
                       }}>
-                        {user.status === "active" ? "Deactivate" : "Activate"}
+                        {user.isActive ? "Deactivate" : "Activate"}
                       </button>
                     </td>
                   </tr>
@@ -126,10 +166,15 @@ export function AdminUsersPage({ setPage }) {
           <div style={{padding:12}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               {[
-                {label:"New Users (This Month)",value:"12",icon:"🆕"},
-                {label:"Inactive Users",value:"1",icon:"⚠️"},
-                {label:"Avg Login Frequency",value:"5.2/week",icon:"📈"},
-                {label:"Course Enrollment",value:"4.2 avg",icon:"📚"},
+                {label:"New Users (This Month)",value:users.filter(u => {
+                  const createdDate = new Date(u.createdAt);
+                  const oneMonthAgo = new Date();
+                  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                  return createdDate >= oneMonthAgo;
+                }).length,icon:"📈"},
+                {label:"Inactive Users",value:users.filter(u => !u.isActive).length,icon:"⚠️"},
+                {label:"Avg Login Frequency",value:"N/A",icon:"�"},
+                {label:"Course Enrollment",value:"N/A",icon:"📚"},
               ].map((stat, index) => (
                 <div key={index} style={{
                   background:"#f9f9f9",borderRadius:6,padding:8,textAlign:"center"

@@ -1,6 +1,7 @@
 import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { authAPI } from '../utils/api.js';
 
 export function TopBar({ role, setRole, setPage, currentPage }) {
   const w = useW();
@@ -12,6 +13,108 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
   const [showSemesterDropdown, setShowSemesterDropdown] = useState(false);
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
   const [showHelpDropdown, setShowHelpDropdown] = useState(false);
+  const [user, setUser] = useState(null);
+  const [selectedYear, setSelectedYear] = useState('2025/2026');
+  const [selectedSemester, setSelectedSemester] = useState('Semester One');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
+
+  useEffect(() => {
+    const currentUser = authAPI.getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
+    }
+  }, []);
+
+  // Close search dropdown when clicking outside or pressing ESC
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSearch && !event.target.closest('.search-container')) {
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && showSearch) {
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+      }
+    };
+
+    if (showSearch) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showSearch]);
+
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
+
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      // Import booksAPI dynamically to avoid circular dependency
+      const { booksAPI } = await import('../utils/api.js');
+      const response = await booksAPI.search(query);
+      
+      if (response.success) {
+        setSearchResults(response.books || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSearchInputChange = (value) => {
+    setSearchQuery(value);
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // Set new timeout for search
+    const timeout = setTimeout(() => {
+      handleSearch(value);
+    }, 300); // 300ms debounce
+    
+    setSearchTimeout(timeout);
+  };
+
+  const handleResultClick = (result) => {
+    // Navigate to library page with the selected book
+    setPage("library");
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
 
   return (
     <div>
@@ -33,38 +136,83 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
               onClick={() => setShowYearDropdown(!showYearDropdown)}
               style={{fontSize: "12px", color: "white", transition: "color 0.2s", display: "flex", alignItems: "center", gap: "4px", background: "none", border: "none", cursor: "pointer", padding: "6px 12px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.2)"}}
             >
-              2025/2026
+              {selectedYear}
               <svg style={{width: "12px", height: "12px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {showYearDropdown && (
               <div style={{position: "absolute", top: "100%", left: 0, backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "4px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", zIndex: 50, minWidth: "120px", marginTop: "4px"}}>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2025/2026'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2025/2026
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2024/2025'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2024/2025
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2023/2024'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2023/2024
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2022/2023'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2022/2023
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2021/2022'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2021/2022
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2020/2021'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2020/2021
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2019/2020'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2019/2020
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2018/2019'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2018/2019
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedYear('2017/2018'); setShowYearDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   2017/2018
                 </button>
               </div>
@@ -75,17 +223,27 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
               onClick={() => setShowSemesterDropdown(!showSemesterDropdown)}
               style={{fontSize: "12px", color: "white", transition: "color 0.2s", display: "flex", alignItems: "center", gap: "4px", background: "none", border: "none", cursor: "pointer"}}
             >
-              Semester One
+              {selectedSemester}
               <svg style={{width: "12px", height: "12px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {showSemesterDropdown && (
               <div style={{position: "absolute", top: "100%", left: 0, backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "4px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", zIndex: 50, minWidth: "120px", marginTop: "4px"}}>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedSemester('Semester One'); setShowSemesterDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   Semester One
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setSelectedSemester('Semester Two'); setShowSemesterDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   Semester Two
                 </button>
               </div>
@@ -103,13 +261,28 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
             </button>
             {showResourcesDropdown && (
               <div style={{position: "absolute", top: "100%", left: 0, backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "4px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", zIndex: 50, minWidth: "120px", marginTop: "4px"}}>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setPage("library"); setShowResourcesDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   Library
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setPage("downloads"); setShowResourcesDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   Downloads
                 </button>
-                <button style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}>
+                <button 
+                  onClick={() => { setPage("help support"); setShowResourcesDropdown(false); }}
+                  style={{width: "100%", padding: "8px 12px", fontSize: "12px", color: "#374151", background: "none", border: "none", cursor: "pointer", textAlign: "left"}} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f3f4f6"} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                >
                   Help Center
                 </button>
               </div>
@@ -143,27 +316,146 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
 
         {/* Right side - Notifications and Profile */}
         <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
-          {/* Additional Icons from Image */}
-          <button style={{color: "white", transition: "color 0.2s", background: "none", border: "none", cursor: "pointer", padding: "8px"}}>
-            <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
+          {/* Search */}
+          <div style={{position: "relative"}} className="search-container">
+            <button 
+              onClick={() => setShowSearch(!showSearch)}
+              style={{color: "white", transition: "color 0.2s", background: "none", border: "none", cursor: "pointer", padding: "8px"}}
+            >
+              <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+            
+            {/* Search Dropdown */}
+            {showSearch && (
+              <div style={{
+                position: "absolute", 
+                top: "100%", 
+                right: 0, 
+                backgroundColor: "white", 
+                border: "1px solid #e5e7eb", 
+                borderRadius: "8px", 
+                boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)", 
+                zIndex: 50, 
+                width: "320px", 
+                marginTop: "8px"
+              }}>
+                {/* Search Input */}
+                <div style={{padding: "12px", borderBottom: "1px solid #e5e7eb"}}>
+                  <input
+                    type="text"
+                    placeholder="Search books, courses, resources..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    autoFocus
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      outline: "none",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                
+                {/* Search Results */}
+                <div style={{maxHeight: "300px", overflowY: "auto"}}>
+                  {searchLoading ? (
+                    <div style={{padding: "20px", textAlign: "center", color: "#6b7280", fontSize: "14px"}}>
+                      Searching...
+                    </div>
+                  ) : searchResults.length === 0 && searchQuery ? (
+                    <div style={{padding: "20px", textAlign: "center", color: "#6b7280", fontSize: "14px"}}>
+                      No results found for "{searchQuery}"
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map(result => (
+                      <div
+                        key={result.id}
+                        onClick={() => handleResultClick(result)}
+                        style={{
+                          padding: "12px",
+                          borderBottom: "1px solid #f3f4f6",
+                          cursor: "pointer",
+                          transition: "background 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "white"}
+                      >
+                        <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                          <div style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "6px",
+                            backgroundColor: "#f3f4f6",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#6b7280",
+                            fontSize: "12px",
+                            fontWeight: "600"
+                          }}>
+                            BOOK
+                          </div>
+                          <div style={{flex: 1}}>
+                            <div style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#111827",
+                              marginBottom: "2px"
+                            }}>
+                              {result.title}
+                            </div>
+                            <div style={{
+                              fontSize: "12px",
+                              color: "#6b7280",
+                              marginBottom: "2px"
+                            }}>
+                              by {result.author}
+                            </div>
+                            <div style={{
+                              fontSize: "11px",
+                              color: "#9ca3af"
+                            }}>
+                              {result.genre} · ISBN: {result.isbn}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{padding: "20px", textAlign: "center", color: "#6b7280", fontSize: "14px"}}>
+                      Search for books, courses, and resources
+                    </div>
+                  )}
+                </div>
+                
+                {/* Search Footer */}
+                <div style={{
+                  padding: "8px 12px",
+                  borderTop: "1px solid #e5e7eb",
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  textAlign: "center"
+                }}>
+                  Press ESC to close
+                </div>
+              </div>
+            )}
+          </div>
           <button style={{color: "white", transition: "color 0.2s", background: "none", border: "none", cursor: "pointer", padding: "8px"}}>
             <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118.967 15H6.033a2.032 2.032 0 01-1.405-1.405L3.523 17H5m0 0h14m-7-7h.01M12 3v14m0 0l-3.5-3.5M12 14l3.5-3.5" />
             </svg>
           </button>
-          <button style={{color: "white", transition: "color 0.2s", background: "none", border: "none", cursor: "pointer", padding: "8px"}}>
-            <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-          </button>
-          
+                    
           {/* Messages */}
           <div style={{position: "relative"}}>
             <button 
-              onClick={() => setShowMessages(!showMessages)}
+              onClick={() => setPage("messages")}
               style={{color: "white", transition: "color 0.2s", background: "none", border: "none", cursor: "pointer", padding: "8px"}}
             >
               <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +486,7 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
               <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span style={{fontSize: "12px"}}>John Doe</span>
+              <span style={{fontSize: "12px"}}>{user ? `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}` : 'Loading...'}</span>
               <svg style={{width: "16px", height: "16px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -207,14 +499,14 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
                 <div style={{padding: "16px", borderBottom: "1px solid #e5e7eb"}}>
                   <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
                     <div style={{width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "16px", fontWeight: "bold"}}>
-                      JD
+                      {user ? `${user.profile?.firstName?.charAt(0) || ''}${user.profile?.lastName?.charAt(0) || ''}`.toUpperCase() : 'U'}
                     </div>
                     <div>
                       <div style={{fontSize: "14px", fontWeight: "600", color: "#111827", marginBottom: "2px"}}>
-                        John Doe
+                        {user ? `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}` : 'Loading...'}
                       </div>
                       <div style={{fontSize: "12px", color: "#6b7280"}}>
-                        Student • Computer Science
+                        {user ? `${user.role?.charAt(0).toUpperCase() + user.role?.slice(1) || ''} ${user.profile?.department || ''}` : 'Loading...'}
                       </div>
                     </div>
                   </div>
@@ -329,16 +621,7 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
                 </svg>
                 Courses
               </button>
-              <button 
-                onClick={() => setPage("sessions")}
-                style={{color: currentPage === "sessions" ? "#2563eb" : "#6b7280", fontWeight: currentPage === "sessions" ? "bold" : "normal", fontSize: "14px", background: "none", border: "none", cursor: "pointer", padding: "4px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px"}}
-              >
-                <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Sessions
-              </button>
-              <button 
+                            <button 
                 onClick={() => setPage("reports")}
                 style={{color: currentPage === "reports" ? "#2563eb" : "#6b7280", fontWeight: currentPage === "reports" ? "bold" : "normal", fontSize: "14px", background: "none", border: "none", cursor: "pointer", padding: "4px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px"}}
               >
@@ -365,15 +648,6 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Logs
-              </button>
-              <button 
-                onClick={() => setPage("extras")}
-                style={{color: currentPage === "extras" ? "#2563eb" : "#6b7280", fontWeight: currentPage === "extras" ? "bold" : "normal", fontSize: "14px", background: "none", border: "none", cursor: "pointer", padding: "4px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px"}}
-              >
-                <svg style={{width: "20px", height: "20px"}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Extra
               </button>
             </>
           ) : role === "lecturer" ? (

@@ -1,69 +1,53 @@
+import { useState, useEffect } from 'react';
 import { useW } from '../hooks/useW.js';
 import { C, LECTURER_COURSES } from '../data/constants.js';
 import { SectionCard, Badge } from '../components/shared/SectionCard.jsx';
+import { lecturerExtrasAPI } from '../utils/api.js';
 
 export function LecturerExtrasPage({ setPage }) {
   const w = useW();
   const isLg = w >= 1024;
+  const [resources, setResources] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [stats, setStats] = useState({
+    resources: 0,
+    announcements: 0,
+    tools: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const resources = [
-    {
-      id: 1,
-      title: "Teaching Resources",
-      description: "Access teaching materials, templates, and guides",
-      icon: "📚",
-      category: "Teaching",
-      items: 45
-    },
-    {
-      id: 2,
-      title: "Professional Development",
-      description: "Training programs and certification opportunities",
-      icon: "🎓",
-      category: "Development",
-      items: 12
-    },
-    {
-      id: 3,
-      title: "Research Tools",
-      description: "Access to research databases and tools",
-      icon: "🔬",
-      category: "Research",
-      items: 28
-    },
-    {
-      id: 4,
-      title: "Administrative Forms",
-      description: "Download and submit administrative forms",
-      icon: "📋",
-      category: "Admin",
-      items: 15
-    }
-  ];
+  useEffect(() => {
+    fetchLecturerExtras();
+  }, []);
 
-  const announcements = [
-    {
-      id: 1,
-      title: "Faculty Meeting - March 30",
-      date: "2026-03-25",
-      priority: "high",
-      description: "Monthly faculty meeting to discuss curriculum updates"
-    },
-    {
-      id: 2,
-      title: "Professional Development Workshop",
-      date: "2026-03-24",
-      priority: "medium",
-      description: "Workshop on innovative teaching methods"
-    },
-    {
-      id: 3,
-      title: "Research Grant Applications Open",
-      date: "2026-03-23",
-      priority: "medium",
-      description: "Apply for research funding for next semester"
+  const fetchLecturerExtras = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await lecturerExtrasAPI.getLecturerExtras();
+      
+      console.log('Lecturer Extras API Response:', response);
+      
+      if (response.success) {
+        setResources(response.resources || []);
+        setAnnouncements(response.announcements || []);
+        setStats(response.stats || {
+          resources: 0,
+          announcements: 0,
+          tools: 0
+        });
+      } else {
+        console.log('API returned success=false');
+        setError('Failed to fetch lecturer resources');
+      }
+    } catch (error) {
+      console.log('API Error:', error);
+      setError(error.message || 'Failed to fetch lecturer resources');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getPriorityColor = (priority) => {
     switch(priority) {
@@ -74,15 +58,36 @@ export function LecturerExtrasPage({ setPage }) {
     }
   };
 
+  const handleAccessResource = (resource) => {
+    if (resource.url) {
+      window.open(resource.url, '_blank');
+    }
+  };
+
   return (
     <div style={{padding:isLg?"24px 32px":16}}>
       <h2 style={{margin:"0 0 16px",fontSize:isLg?20:15,color:"#333",fontWeight:700}}>Faculty Resources</h2>
       
+      {/* Error Message */}
+      {error && (
+        <div style={{
+          backgroundColor: "#fee",
+          color: "#c53030",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          marginBottom: "16px",
+          fontSize: "14px",
+          border: "1px solid #fed7d7"
+        }}>
+          {error}
+        </div>
+      )}
+
       <div style={{display:"grid",gridTemplateColumns:isLg?"repeat(3,1fr)":w>=640?"repeat(2,1fr)":"1fr",gap:16,marginBottom:16}}>
         {[
-          {label:"Resources",value:"4",icon:"📚",color:C.blue},
-          {label:"Announcements",value:"3",icon:"📢",color:C.orange},
-          {label:"Tools",value:"8",icon:"🛠️",color:C.green},
+          {label:"Resources",value:stats.resources.toString(),icon:"📚",color:C.blue},
+          {label:"Announcements",value:stats.announcements.toString(),icon:"📢",color:C.orange},
+          {label:"Tools",value:stats.tools.toString(),icon:"🛠️",color:C.green},
         ].map((stat, index) => (
           <div key={index} style={{
             background:"white",border:"1px solid #e0e0e0",borderRadius:8,
@@ -98,32 +103,48 @@ export function LecturerExtrasPage({ setPage }) {
       <div style={{display:"grid",gridTemplateColumns:isLg?"2fr 1fr":w>=640?"1fr 1fr":"1fr",gap:16}}>
         <SectionCard title="Available Resources" icon="📚" color={C.blue}>
           <div style={{padding:12}}>
-            {resources.map((resource, index) => (
-              <div key={index} style={{
-                background:"#f9f9f9",borderRadius:8,padding:12,marginBottom:8,
-                cursor:"pointer",transition:"all 0.2s"
-              }}
-              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-              onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
-                  <div style={{fontSize:24}}>{resource.icon}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:600,color:"#333",marginBottom:2}}>{resource.title}</div>
-                    <div style={{fontSize:11,color:"#666",marginBottom:2}}>{resource.description}</div>
-                    <div style={{display:"flex",gap:8}}>
-                      <Badge color={C.blue} style={{fontSize:9}}>{resource.category}</Badge>
-                      <Badge color={C.green} style={{fontSize:9}}>{resource.items} items</Badge>
+            {loading ? (
+              <div style={{textAlign: "center", padding: "40px"}}>
+                <div style={{fontSize: "16px", color: "#6b7280"}}>Loading faculty resources...</div>
+              </div>
+            ) : resources.length === 0 ? (
+              <div style={{textAlign: "center", padding: "40px"}}>
+                <div style={{fontSize: "16px", color: "#6b7280"}}>No faculty resources found</div>
+                <div style={{fontSize: "14px", color: "#9ca3af", marginTop: "8px"}}>
+                  Check back later for new resources
+                </div>
+              </div>
+            ) : (
+              resources.map((resource, index) => (
+                <div key={index} style={{
+                  background:"#f9f9f9",borderRadius:8,padding:12,marginBottom:8,
+                  cursor:"pointer",transition:"all 0.2s"
+                }}
+                onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+                onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+                    <div style={{fontSize:24}}>{resource.icon}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:600,color:"#333",marginBottom:2}}>{resource.title}</div>
+                      <div style={{fontSize:11,color:"#666",marginBottom:2}}>{resource.description}</div>
+                      <div style={{display:"flex",gap:8}}>
+                        <Badge color={C.blue} style={{fontSize:9}}>{resource.category}</Badge>
+                        <Badge color={C.green} style={{fontSize:9}}>{resource.items} items</Badge>
+                      </div>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => handleAccessResource(resource)}
+                    style={{
+                      background:C.blue,color:"white",border:"none",borderRadius:4,
+                      padding:"4px 8px",fontSize:9,cursor:"pointer"
+                    }}
+                  >
+                    Access Resource
+                  </button>
                 </div>
-                <button style={{
-                  background:C.blue,color:"white",border:"none",borderRadius:4,
-                  padding:"4px 8px",fontSize:9,cursor:"pointer"
-                }}>
-                  Access Resource
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </SectionCard>
 

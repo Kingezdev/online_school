@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useW } from './hooks/useW.js';
 import { TopBar } from './components/TopBar.jsx';
 import { SideNav } from './components/SideNav.jsx';
@@ -8,6 +8,7 @@ import { HomePage } from './components/HomePage.jsx';
 import { StudentLogin } from './components/StudentLogin.jsx';
 import { LecturerLogin } from './components/LecturerLogin.jsx';
 import { AdminLogin } from './components/AdminLogin.jsx';
+import { Register } from './components/Register.jsx';
 import { StudentDashboard } from './pages/StudentDashboard.jsx';
 import { LecturerDashboard } from './pages/LecturerDashboard.jsx';
 import { AdminDashboard } from './pages/AdminDashboard.jsx';
@@ -21,10 +22,16 @@ import { StudentForumPage } from './pages/StudentForumPage.jsx';
 import { StudentAssignmentsPage } from './pages/StudentAssignmentsPage.jsx';
 import { StudentStudioPage } from './pages/StudentStudioPage.jsx';
 import { StudentExtrasPage } from './pages/StudentExtrasPage.jsx';
+import { StudentQRAttendancePage } from './pages/StudentQRAttendancePage.jsx';
+import { LibraryPage } from './pages/LibraryPage.jsx';
+import { DownloadsPage } from './pages/DownloadsPage.jsx';
+import { MessagesPage } from './pages/MessagesPage.jsx';
 import { LecturerGradeBookPage } from './pages/LecturerGradeBookPage.jsx';
 import { LecturerAssignmentsPage } from './pages/LecturerAssignmentsPage.jsx';
 import { LecturerForumPage } from './pages/LecturerForumPage.jsx';
 import { LecturerReportsPage } from './pages/LecturerReportsPage.jsx';
+import { LecturerCoursesPage } from './pages/LecturerCoursesPage.jsx';
+import { CourseStudentsPage } from './pages/CourseStudentsPage.jsx';
 import { LecturerExtrasPage } from './pages/LecturerExtrasPage.jsx';
 import { AdminUsersPage } from './pages/AdminUsersPage.jsx';
 import { AdminCoursesPage } from './pages/AdminCoursesPage.jsx';
@@ -35,26 +42,56 @@ import { MyProfilePage } from './pages/MyProfilePage.jsx';
 import { HelpSupportPage } from './pages/HelpSupportPage.jsx';
 import { StaffProfilePage } from './pages/StaffProfilePage.jsx';
 import { C } from './data/constants.js';
+import { authAPI } from './utils/api.js';
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [loggedIn,setLoggedIn] = useState(false);
-  const [role,setRole]         = useState("student");
-  const [page,setPage]         = useState("dashboard");
-  const [loginStep,setLoginStep] = useState("home"); // "home", "login"
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [role, setRole] = useState("student");
+  const [page, setPage] = useState("dashboard");
+  const [loginStep, setLoginStep] = useState("home"); // "home", "login"
+  const [user, setUser] = useState(null);
   const w = useW();
-  const isLg = w>=1024;
-  const isMd = w>=640 && w<1024;
-  const isSm = w<640;
+  const isLg = w >= 1024;
+  const isMd = w >= 640 && w < 1024;
+  const isSm = w < 640;
+
+  // Check for existing authentication on mount
+  useEffect(() => {
+    if (authAPI.isAuthenticated()) {
+      const currentUser = authAPI.getCurrentUser();
+      if (currentUser) {
+        setLoggedIn(true);
+        setRole(currentUser.role);
+        setUser(currentUser);
+        setPage("dashboard");
+      }
+    }
+  }, []);
 
   const handleRoleSelect = (selectedRole) => {
     setRole(selectedRole);
-    setLoginStep("login");
+    if (selectedRole === 'register') {
+      setLoginStep("register");
+    } else {
+      setLoginStep("login");
+    }
   };
 
-  const handleLogin = () => {
+  const handleLogin = (userRole, userData) => {
     setLoggedIn(true);
+    const actualRole = userData?.role || userRole;
+    setRole(actualRole);
+    setUser(userData);
     setPage("dashboard");
+  };
+
+  const handlePageChange = (page, ...args) => {
+    if (page === 'course students' && args[0]) {
+      // Store the courseId in user state for course students page
+      setUser(prev => ({ ...prev, currentCourseId: args[0] }));
+    }
+    setPage(page, ...args);
   };
 
   const handleBackToHome = () => {
@@ -62,7 +99,10 @@ export default function App() {
   };
 
   const switchRole = () => {
+    authAPI.logout();
     setLoggedIn(false);
+    setRole("student");
+    setUser(null);
     setLoginStep("home");
   };
 
@@ -77,6 +117,8 @@ export default function App() {
       } else if (role === "admin") {
         return <AdminLogin onLogin={handleLogin} onBack={handleBackToHome} />;
       }
+    } else if (loginStep === "register") {
+      return <Register onRegister={handleLogin} onBack={handleBackToHome} />;
     }
   }
 
@@ -84,8 +126,11 @@ export default function App() {
     console.log("Current page:", page, "Role:", role);
     if (page==="dashboard") return role==="lecturer"?<LecturerDashboard setPage={setPage}/>:role==="admin"?<AdminDashboard setPage={setPage}/>:<StudentDashboard setPage={setPage}/>;
     if (page==="home")       return <HomePage setPage={setPage} role={role}/>;
-    if (page==="my courses") return <MyCoursesPage role={role}/>;
+    if (page==="my courses") return role==="lecturer"?<LecturerCoursesPage setPage={handlePageChange}/>:<MyCoursesPage role={role}/>;
     if (page==="attendance") return <AttendancePage role={role}/>;
+    if (page==="library") return <LibraryPage setPage={setPage}/>;
+    if (page==="downloads") return <DownloadsPage setPage={setPage}/>;
+    if (page==="messages") return <MessagesPage setPage={setPage}/>;
     
     // Student pages
     if (role==="student") {
@@ -96,6 +141,7 @@ export default function App() {
       if (page==="assignment") return <StudentAssignmentsPage setPage={setPage}/>;
       if (page==="studio") return <StudentStudioPage setPage={setPage}/>;
       if (page==="extras") return <StudentExtrasPage setPage={setPage}/>;
+      if (page==="qr attendance") return <StudentQRAttendancePage setPage={setPage}/>;
       if (page==="my profile") return <MyProfilePage setPage={setPage}/>;
       if (page==="help support") return <HelpSupportPage setPage={setPage}/>;
     }
@@ -109,6 +155,11 @@ export default function App() {
       if (page==="extras") return <LecturerExtrasPage setPage={setPage}/>;
       if (page==="help support") return <HelpSupportPage setPage={setPage}/>;
       if (page==="staff profile") return <StaffProfilePage setPage={setPage} role={role}/>;
+    }
+    
+    // Course students page (for lecturers)
+    if (page==="course students") {
+      return <CourseStudentsPage setPage={handlePageChange} courseId={user?.currentCourseId}/>;
     }
     
     // Admin pages

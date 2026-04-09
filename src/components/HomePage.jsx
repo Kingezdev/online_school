@@ -151,6 +151,29 @@ export function HomePage({ onRoleSelect }) {
             ))}
           </div>
 
+          {/* Register Button */}
+          <div style={{
+            textAlign: "center",
+            marginBottom: 32
+          }}>
+            <button
+              onClick={() => onRoleSelect('register')}
+              style={{
+                padding: "16px 32px",
+                background: "transparent",
+                border: "2px solid #6b7280",
+                borderRadius: 8,
+                color: "#6b7280",
+                fontSize: isLg ? 14 : 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              📝 Create New Account
+            </button>
+          </div>
+
           {/* Current role content */}
           {currentRole && (
             <div style={{textAlign: "center"}}>

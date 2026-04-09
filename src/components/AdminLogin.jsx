@@ -1,21 +1,31 @@
 import { useState } from "react";
 import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
+import { authAPI } from '../utils/api.js';
 
 export function AdminLogin({ onLogin, onBack }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const w = useW();
   const isLg = w >= 1024;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    
+    try {
+      const response = await authAPI.login(username, password);
+      if (response.success) {
+        onLogin("admin", response.user);
+      }
+    } catch (error) {
+      setError(error.message || "Login failed. Please try again.");
+    } finally {
       setLoading(false);
-      onLogin("admin");
-    }, 700);
+    }
   };
 
   return (
@@ -246,6 +256,20 @@ export function AdminLogin({ onLogin, onBack }) {
               Remember me
             </label>
           </div>
+
+          {error && (
+            <div style={{
+              background: "#fee",
+              color: "#c53030",
+              padding: "12px",
+              borderRadius: 8,
+              marginBottom: 16,
+              fontSize: 14,
+              border: "1px solid #fed7d7"
+            }}>
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
