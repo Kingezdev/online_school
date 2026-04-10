@@ -89,7 +89,7 @@ export function Register({ onRegister, onBack }) {
       if (response.success) {
         setStep(3);
         setTimeout(() => {
-          onRegister("student", response.user);
+          onRegister(formData.role, response.user);
         }, 2000);
       }
     } catch (error) {
@@ -325,6 +325,7 @@ export function Register({ onRegister, onBack }) {
           >
             <option value="student">Student</option>
             <option value="lecturer">Lecturer</option>
+            <option value="admin">Administrator</option>
           </select>
         </div>
       </div>
