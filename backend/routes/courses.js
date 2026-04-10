@@ -8,7 +8,8 @@ const {
   updateCourse,
   deleteCourse,
   enrollCourse,
-  unenrollCourse
+  unenrollCourse,
+  assignLecturerToCourse
 } = require('../controllers/courseController');
 
 // All routes require authentication
@@ -28,5 +29,6 @@ router.post('/:id/unenroll', authorize('student'), unenrollCourse);
 
 // Admin only routes
 router.delete('/:id', authorize('admin'), deleteCourse);
+router.post('/:id/assign', authorize('admin'), assignLecturerToCourse);
 
 module.exports = router;

@@ -146,6 +146,13 @@ export const courseAPI = {
       method: 'POST',
     });
   },
+
+  assignLecturer: async (courseId, lecturerId) => {
+    return apiRequest(`/courses/${courseId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ lecturerId }),
+    });
+  },
 };
 
 // Assignment APIs

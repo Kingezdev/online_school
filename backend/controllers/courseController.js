@@ -189,15 +189,32 @@ const updateCourse = async (req, res) => {
     }
 
     // Update course
-    const updateQuery = `
-      UPDATE courses 
-      SET code = COALESCE(?, code), 
-          name = COALESCE(?, name), 
-          updatedAt = datetime('now')
-      WHERE id = ?
-    `;
+    let updateQuery, updateParams;
     
-    await runQuery(updateQuery, [code, name, courseId]);
+    if (req.user.role === 'admin' && req.body.lecturerId) {
+      // Admin can update lecturer
+      updateQuery = `
+        UPDATE courses 
+        SET code = COALESCE(?, code), 
+            name = COALESCE(?, name),
+            lecturer = COALESCE(?, lecturer),
+            updatedAt = datetime('now')
+        WHERE id = ?
+      `;
+      updateParams = [code, name, req.body.lecturerId, courseId];
+    } else {
+      // Regular update (no lecturer change)
+      updateQuery = `
+        UPDATE courses 
+        SET code = COALESCE(?, code), 
+            name = COALESCE(?, name), 
+            updatedAt = datetime('now')
+        WHERE id = ?
+      `;
+      updateParams = [code, name, courseId];
+    }
+    
+    await runQuery(updateQuery, updateParams);
     
     // Get updated course with lecturer info
     const selectQuery = `
@@ -340,6 +357,52 @@ const unenrollCourse = async (req, res) => {
   }
 };
 
+// @desc    Assign lecturer to course
+// @route   POST /api/courses/:id/assign
+// @access  Private/Admin
+const assignLecturerToCourse = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const { lecturerId } = req.body;
+
+    if (!lecturerId) {
+      return res.status(400).json({ message: 'Lecturer ID is required' });
+    }
+
+    // Check if course exists
+    const course = await getSingle('SELECT * FROM courses WHERE id = ?', [courseId]);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Check if lecturer exists and is actually a lecturer
+    const lecturer = await getSingle('SELECT * FROM users WHERE id = ? AND role = "lecturer"', [lecturerId]);
+    if (!lecturer) {
+      return res.status(404).json({ message: 'Lecturer not found' });
+    }
+
+    // Update course with new lecturer
+    await runQuery('UPDATE courses SET lecturer = ?, updatedAt = datetime("now") WHERE id = ?', [lecturerId, courseId]);
+
+    // Get updated course with lecturer info
+    const updatedCourse = await getSingle(`
+      SELECT c.id, c.code, c.name, c.lecturer, c.isActive, c.createdAt, c.updatedAt,
+             u.username as lecturerUsername, u.profile_firstName as lecturerFirstName, u.profile_lastName as lecturerLastName
+      FROM courses c
+      INNER JOIN users u ON c.lecturer = u.id
+      WHERE c.id = ?
+    `, [courseId]);
+
+    res.json({
+      success: true,
+      course: updatedCourse,
+      message: 'Lecturer assigned to course successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getCourses,
   getCourse,
@@ -347,5 +410,6 @@ module.exports = {
   updateCourse,
   deleteCourse,
   enrollCourse,
-  unenrollCourse
+  unenrollCourse,
+  assignLecturerToCourse
 };
