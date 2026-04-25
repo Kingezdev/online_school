@@ -26,8 +26,10 @@ export function TopBar({ role, setRole, setPage, currentPage }) {
     const currentUser = authAPI.getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
+    } else {
+      setUser(null);
     }
-  }, []);
+  }, [role]);
 
   // Close search dropdown when clicking outside or pressing ESC
   useEffect(() => {

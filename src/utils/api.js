@@ -74,10 +74,17 @@ export const authAPI = {
   },
 
   register: async (userData) => {
-    return apiRequest('/auth/register', {
+    const data = await apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
+    
+    if (data.success && data.token) {
+      setToken(data.token);
+      setUser(data.user);
+    }
+    
+    return data;
   },
 
   getProfile: async () => {
