@@ -157,7 +157,8 @@ export function HomePage({ onRoleSelect }) {
             marginBottom: 32
           }}>
             <button
-              onClick={() => onRoleSelect('register')}
+              onClick={() => onRoleSelect('register', selectedRole)}
+            
               style={{
                 padding: "16px 32px",
                 background: "transparent",

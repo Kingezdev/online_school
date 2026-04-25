@@ -3,13 +3,13 @@ import { useW } from '../hooks/useW.js';
 import { C } from '../data/constants.js';
 import { authAPI } from '../utils/api.js';
 
-export function Register({ onRegister, onBack }) {
+export function Register({ onRegister, onBack, defaultRole = 'student' }) {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student',
+    role: defaultRole,
     profile: {
       firstName: '',
       lastName: '',
@@ -308,7 +308,7 @@ export function Register({ onRegister, onBack }) {
           }}>👥</span>
           <select
             value={formData.role}
-            onChange={(e) => handleInputChange('role', e.target.value)}
+            disabled
             style={{
               width: "100%",
               padding: "12px 12px 12px 40px",
@@ -318,14 +318,16 @@ export function Register({ onRegister, onBack }) {
               outline: "none",
               boxSizing: "border-box",
               background: "#f8f9fa",
-              transition: "border-color 0.2s"
+              color: "#555",
+              cursor: "not-allowed"
             }}
             onFocus={e => e.currentTarget.style.borderColor = C.blue}
             onBlur={e => e.currentTarget.style.borderColor = "#ddd"}
           >
-            <option value="student">Student</option>
-            <option value="lecturer">Lecturer</option>
-            <option value="admin">Administrator</option>
+            <option value={defaultRole}>
+              {defaultRole === 'student' ? 'Student' :
+               defaultRole === 'lecturer' ? 'Lecturer' : 'Administrator'}
+            </option>
           </select>
         </div>
       </div>

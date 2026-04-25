@@ -55,6 +55,7 @@ export default function App() {
   const isLg = w >= 1024;
   const isMd = w >= 640 && w < 1024;
   const isSm = w < 640;
+  const [registerRole, setRegisterRole] = useState('student');
 
   // Check for existing authentication on mount
   useEffect(() => {
@@ -69,14 +70,15 @@ export default function App() {
     }
   }, []);
 
-  const handleRoleSelect = (selectedRole) => {
+const handleRoleSelect = (selectedRole, roleForRegister) => {
+  if (selectedRole === 'register') {
+    setRegisterRole(roleForRegister || 'student');
+    setLoginStep("register");
+  } else {
     setRole(selectedRole);
-    if (selectedRole === 'register') {
-      setLoginStep("register");
-    } else {
-      setLoginStep("login");
-    }
-  };
+    setLoginStep("login");
+  }
+};
 
   const handleLogin = (userRole, userData) => {
     setLoggedIn(true);
@@ -118,7 +120,7 @@ export default function App() {
         return <AdminLogin onLogin={handleLogin} onBack={handleBackToHome} />;
       }
     } else if (loginStep === "register") {
-      return <Register onRegister={handleLogin} onBack={handleBackToHome} />;
+    return <Register onRegister={handleLogin} onBack={handleBackToHome} defaultRole={registerRole} />;
     }
   }
 
